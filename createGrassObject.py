@@ -66,19 +66,21 @@ def create_grass(context, prefs):
 def create_grass_object(self, context, prefs):
     bpy.ops.object.select_all(action='DESELECT')
 
-    location = context.scene.cursor_location.copy()
+    location = context.scene.cursor.location.copy()
     grass = create_grass(context, prefs)
 
     if prefs.lp_Grass_Keep_Modifiers:
         grass.location = location
     else:
-        context.scene.update()
+        context.view_layer.update()
         me_orig = grass.data
-        grass.data = grass.to_mesh(context.scene, True, 'PREVIEW')
+        dg = context.evaluated_depsgraph_get()
+        obj_eval = grass.evaluated_get(dg)
+        grass.data =  bpy.data.meshes.new_from_object(obj_eval)
         context.blend_data.meshes.remove(me_orig)
         grass.location = location
 
     grass.data.name = grass.name
-    grass.select = True
+    grass.select_set(True)
 
     return grass

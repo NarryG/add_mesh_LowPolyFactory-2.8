@@ -85,8 +85,8 @@ def populate(self, context, ground=None, spherical=False,
     if merge:
         bpy.ops.object.select_all(action='DESELECT')
         for o in obs:
-            o.select = True
-        bpy.context.scene.objects.active = obs[0]
+            o.select_set(True)
+        bpy.context.view_layer.objects.active = obs[0]
         obs[0].name = 'Population'
         obs[0].data.name = 'Population'
         bpy.ops.object.join()

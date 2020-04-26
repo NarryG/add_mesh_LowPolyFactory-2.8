@@ -20,7 +20,7 @@ bl_info = {
     "name": "LowPolyFactory",
     "author": "Lubos Lenco",
     "version": (1, 0),
-    "blender": (2, 76, 0),
+    "blender": (2, 80, 0),
     "location": "View3D > Add > Mesh > LowPoly",
     "description": "Add lowpoly objects",
     "wiki_url": "http://lowpolyfactory.com/",
@@ -38,10 +38,9 @@ else:
     from bpy.props import *
 
 
-class InfoMtMeshLPFMenuAdd(bpy.types.Menu):
-    bl_idname = "INFO_MT_mesh_lpf_menu_add"
+class MENU_MT_LPF(bpy.types.Menu):
+    bl_idname = "MENU_MT_LPF_Menu_Add"
     bl_label = "LowPoly"
-
     def draw(self, context):
         self.layout.operator_context = 'INVOKE_REGION_WIN'
         rock_id = LowPolyFactory.add_mesh_rock.bl_idname
@@ -63,17 +62,37 @@ class InfoMtMeshLPFMenuAdd(bpy.types.Menu):
 # REGISTER
 
 def menu_func(self, context):
-    self.layout.menu("INFO_MT_mesh_lpf_menu_add", icon="PLUGIN")
+    self.layout.menu(MENU_MT_LPF.bl_idname, icon="PLUGIN")
 
 
+classes = (
+    MENU_MT_LPF,
+    LowPolyFactory.add_mesh_rock,
+    LowPolyFactory.add_mesh_tree,
+    LowPolyFactory.add_mesh_bush,
+    LowPolyFactory.add_mesh_grass,
+    LowPolyFactory.add_mesh_cloud,
+    LowPolyFactory.add_mesh_terrain,
+    LowPolyFactory.add_mesh_water,
+    LPFAddonPreferences.LPFAddonPreferences,
+    editor.LPF_Panel,
+    editor.LPF_UpdateMaterialsButton,
+    editor.LPF_UpdateLightingButton,
+    editor.LPF_PopulateButton,
+    
+    
+)
 def register():
-    bpy.utils.register_module(__name__)
-    bpy.types.INFO_MT_mesh_add.append(menu_func)
+    for cls in classes:
+        bpy.utils.register_class(cls)
+    #bpy.utils.register_module(__name__)
+    bpy.types.VIEW3D_MT_mesh_add.append(menu_func)
 
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
-    bpy.types.INFO_MT_mesh_add.remove(menu_func)
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
+    bpy.types.VIEW3D_MT_mesh_add.remove(menu_func)
 
 
 if __name__ == "__main__":

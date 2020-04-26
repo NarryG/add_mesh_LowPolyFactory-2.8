@@ -62,25 +62,27 @@ def create_terrain(context, prefs):
 def create_terrain_object(self, context, prefs):
     bpy.ops.object.select_all(action='DESELECT')
 
-    location = context.scene.cursor_location.copy()
+    location = context.scene.cursor.location.copy()
     terrain, noise_origin = create_terrain(context, prefs)
 
     if prefs.lp_Terrain_Keep_Modifiers:
         terrain.location = location
         noise_origin.location += location
     else:
-        context.scene.update()
+        context.view_layer.update()
         me_orig = terrain.data
         tex = terrain.modifiers['displace'].texture
-        terrain.data = terrain.to_mesh(context.scene, True, 'PREVIEW')
+        dg = context.evaluated_depsgraph_get()
+        obj_eval = terrain.evaluated_get(dg)
+        terrain.data =  bpy.data.meshes.new_from_object(obj_eval)
         context.blend_data.meshes.remove(me_orig)
         terrain.modifiers.clear()
         terrain.location = location
-        context.scene.objects.unlink(noise_origin)
+        context.collection.objects.unlink(noise_origin)
         context.blend_data.objects.remove(noise_origin)
         context.blend_data.textures.remove(tex)
 
     terrain.data.name = terrain.name
-    terrain.select = True
+    terrain.select_set(True)
 
     return terrain

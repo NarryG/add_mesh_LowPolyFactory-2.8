@@ -123,8 +123,8 @@ def create_object(context, object_name, mesh, material):
     bobject = context.blend_data.objects.new(object_name, mesh)
     bobject.show_all_edges = True
 
-    context.scene.objects.link(bobject)
-    context.scene.objects.active = bobject
+    context.collection.objects.link(bobject)
+    context.view_layer.objects.active = bobject
 
     if len(bobject.data.materials):
         bobject.data.materials[0] = material
@@ -156,7 +156,7 @@ def apply_displacement(context, bobject, direction='NORMAL',
         uniform(-100, 100.0),
         uniform(-100, 100.0),
         uniform(-100, 100.0)]
-    context.scene.objects.link(noise_origin)
+    context.collection.objects.link(noise_origin)
 
     disp = bobject.modifiers.new('displace', 'DISPLACE')
     disp.direction = direction
@@ -200,7 +200,8 @@ def make_vertex_colors(mesh, colors_from, colors_to, prefs):
     col = (
         lerp(t, colors_to[0], colors_from[0]) ** (1.0 / 2.2),
         lerp(t, colors_to[1], colors_from[1]) ** (1.0 / 2.2),
-        lerp(t, colors_to[2], colors_from[2]) ** (1.0 / 2.2))
+        lerp(t, colors_to[2], colors_from[2]) ** (1.0 / 2.2),
+        1.0)
 
     i = 0
     for poly in mesh.polygons:

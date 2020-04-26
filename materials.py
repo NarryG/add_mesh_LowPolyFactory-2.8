@@ -3,7 +3,7 @@ from random import seed, uniform
 
 
 def get_theme():
-    prefs = bpy.context.user_preferences.addons[__package__].preferences
+    prefs = bpy.context.preferences.addons[__package__].preferences
     return prefs.lp_Theme_Type
 
 

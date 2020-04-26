@@ -98,7 +98,7 @@ def get_trunk_mesh(context, prefs):
             scale = 1
             mat[0][0], mat[1][1], mat[2][2] = (scale, scale, scale)
             # e = Euler((0, uniform(0, 0.2), 0), 'XYZ')
-            # mat = mat * e.to_matrix().to_4x4()
+            # mat = mat @ e.to_matrix().to_4x4()
             mat.translation = (0, 0, (stage_length / 2 + i * stage_length))
             bmesh.ops.create_cone(
                 bm, cap_ends=True,
@@ -181,7 +181,7 @@ def get_top_mesh(context, prefs):
                 0, 0, (td + ((ssize[2] - 1) / 2) + i * sstep) * 0.85)
             if prefs.lp_Tree_Top_Rotate_Stages:
                 e = Euler((0, 0, uniform(0, 3.14)), 'XYZ')
-                mat = mat * e.to_matrix().to_4x4()
+                mat = mat @ e.to_matrix().to_4x4()
             bmesh.ops.create_cone(
                 bm,
                 cap_ends=True,
@@ -284,7 +284,7 @@ def create_top(context, prefs):
 def create_tree_object(self, context, prefs):
     bpy.ops.object.select_all(action='DESELECT')
 
-    location = context.scene.cursor_location.copy()
+    location = context.scene.cursor.location.copy()
 
     tree_trunk = create_trunk(context, prefs)
     tree_top, noise_origin = create_top(context, prefs)
@@ -301,18 +301,21 @@ def create_tree_object(self, context, prefs):
             noise_origin.location += location
         tree_trunk.data.name = tree_trunk.name
         tree_top.data.name = tree_top.name
-        tree_top.select = True
+        tree_top.select_set(True)
         if tree_extra is not None:
             tree_extra.location = location
             tree_extra.data.name = tree_extra.name
     else:
-        context.scene.update()
+        context.view_layer.update()
         me_orig = tree_top.data
         if noise_origin is not None:  # Displacement was performed
             tex = tree_top.modifiers['displace'].texture
         else:
             tex = None
-        tree_top.data = tree_top.to_mesh(context.scene, True, 'PREVIEW')
+            
+        dg = context.evaluated_depsgraph_get()
+        obj_eval = tree_top.evaluated_get(dg)
+        tree_top.data =  bpy.data.meshes.new_from_object(obj_eval)
         context.blend_data.meshes.remove(me_orig)
         tree_top.modifiers.clear()
         tree_top.location = location
@@ -320,17 +323,17 @@ def create_tree_object(self, context, prefs):
         if tree_extra is not None:
             tree_extra.location = location
         if noise_origin is not None:
-            context.scene.objects.unlink(noise_origin)
+            context.collection.objects.unlink(noise_origin)
             context.blend_data.objects.remove(noise_origin)
         if tex is not None:
             context.blend_data.textures.remove(tex)
 
         # Join objects
-        tree_top.select = True
-        tree_trunk.select = True
+        tree_top.select_set(True)
+        tree_trunk.select_set(True)
         if tree_extra is not None:
-            tree_extra.select = True
-        bpy.context.scene.objects.active = tree_top
+            tree_extra.select_set(True)
+        bpy.context.view_layer.objects.active = tree_top
         bpy.ops.object.join()
 
         # ext = ''
@@ -339,6 +342,6 @@ def create_tree_object(self, context, prefs):
 
         tree_top.name = 'Tree'
         tree_top.data.name = tree_top.name
-        tree_top.select = True
+        tree_top.select_set(True)
 
     return tree_top

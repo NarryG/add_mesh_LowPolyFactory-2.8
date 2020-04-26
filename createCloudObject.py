@@ -19,7 +19,7 @@ def draw_cloud(bm, prefs, translation=(0, 0, 0)):
     scale = (sx, sy, sz)
     mat[0][0], mat[1][1], mat[2][2] = scale[0], scale[1], scale[2]
     e = Euler((uniform(0, 3.14), uniform(0, 3.14), uniform(0, 3.14)), 'XYZ')
-    mat = mat * e.to_matrix().to_4x4()
+    mat = mat @ e.to_matrix().to_4x4()
     bmesh.ops.create_icosphere(bm, subdivisions=prefs.lp_Cloud_Subdivisions,
                                diameter=1.0, matrix=mat)
     return scale
@@ -76,19 +76,21 @@ def create_cloud(context, prefs):
 def create_cloud_object(self, context, prefs):
     bpy.ops.object.select_all(action='DESELECT')
 
-    location = context.scene.cursor_location.copy()
+    location = context.scene.cursor.location.copy()
     cloud = create_cloud(context, prefs)
 
     if prefs.lp_Cloud_Keep_Modifiers:
         cloud.location = location
     else:
-        context.scene.update()
+        context.view_layer.update()
         me_orig = cloud.data
-        cloud.data = cloud.to_mesh(context.scene, True, 'PREVIEW')
+        dg = context.evaluated_depsgraph_get()
+        obj_eval = cloud.evaluated_get(dg)
+        cloud.data =  bpy.data.meshes.new_from_object(obj_eval)
         context.blend_data.meshes.remove(me_orig)
         cloud.location = location
 
     cloud.data.name = cloud.name
-    cloud.select = True
+    cloud.select_set(True)
 
     return cloud

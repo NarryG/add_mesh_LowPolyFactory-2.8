@@ -55,25 +55,27 @@ def create_bush(context, prefs):
 def create_bush_object(self, context, prefs):
     bpy.ops.object.select_all(action='DESELECT')
 
-    location = context.scene.cursor_location.copy()
+    location = context.scene.cursor.location.copy()
     bush, noise_origin = create_bush(context, prefs)
 
     if prefs.lp_Bush_Keep_Modifiers:
         bush.location = location
         noise_origin.location += location
     else:
-        context.scene.update()
+        context.view_layer.update()
         me_orig = bush.data
         tex = bush.modifiers['displace'].texture
-        bush.data = bush.to_mesh(context.scene, True, 'PREVIEW')
+        dg = context.evaluated_depsgraph_get()
+        obj_eval = bush.evaluated_get(dg)
+        bush.data =  bpy.data.meshes.new_from_object(obj_eval)
         context.blend_data.meshes.remove(me_orig)
         bush.modifiers.clear()
         bush.location = location
-        context.scene.objects.unlink(noise_origin)
+        context.collection.objects.unlink(noise_origin)
         context.blend_data.objects.remove(noise_origin)
         context.blend_data.textures.remove(tex)
 
     bush.data.name = bush.name
-    bush.select = True
+    bush.select_set(True)
 
     return bush

@@ -52,7 +52,7 @@ def create_rock(context, prefs):
 def create_rock_object(self, context, prefs):
     bpy.ops.object.select_all(action='DESELECT')
 
-    location = context.scene.cursor_location.copy()
+    location = context.scene.cursor.location.copy()
 
     rock, noise_origin = create_rock(context, prefs)
 
@@ -60,18 +60,20 @@ def create_rock_object(self, context, prefs):
         rock.location = location
         noise_origin.location += location
     else:
-        context.scene.update()
+        context.view_layer.update()
         me_orig = rock.data
         tex = rock.modifiers['displace'].texture
-        rock.data = rock.to_mesh(context.scene, True, 'PREVIEW')
+        dg = context.evaluated_depsgraph_get()
+        obj_eval = rock.evaluated_get(dg)
+        rock.data =  bpy.data.meshes.new_from_object(obj_eval)
         context.blend_data.meshes.remove(me_orig)
         rock.modifiers.clear()
         rock.location = location
-        context.scene.objects.unlink(noise_origin)
+        context.collection.objects.unlink(noise_origin)
         context.blend_data.objects.remove(noise_origin)
         context.blend_data.textures.remove(tex)
 
     rock.data.name = rock.name
-    rock.select = True
+    rock.select_set(True)
 
     return rock

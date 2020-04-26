@@ -8,13 +8,15 @@ import mathutils
 from mathutils import *
 
 
-def transform_ground_to_world(sc, ground):
-    tmpMesh = ground.to_mesh(sc, True, 'PREVIEW')
-    tmpMesh.transform(ground.matrix_world)
-    tmp_ground = bpy.data.objects.new('tmpGround', tmpMesh)
-    sc.objects.link(tmp_ground)
-    sc.update()
-    return tmp_ground
+def transform_ground_to_world(layer, ground):
+	deps = bpy.context.evaluated_depsgraph_get()
+	eval = ground.evaluated_get(deps)
+	tmpMesh = bpy.data.meshes.new_from_object(eval) 	   
+	tmpMesh.transform(ground.matrix_world)
+	tmp_ground = bpy.data.objects.new(name='tmpGround', object_data=tmpMesh)
+	bpy.context.view_layer.active_layer_collection.collection.objects.link(tmp_ground)
+	bpy.context.view_layer.update()
+	return tmp_ground
 
 
 def get_lowest_world_co_from_mesh(ob, mat_parent=None):
@@ -70,7 +72,7 @@ def drop_objects(self, context, ground, obs, spherical=False, use_origin=True):
                  uniform(0, math.pi * 2)),
                 'XYZ')
             mat_rot = e.to_matrix().to_4x4()
-            ground.matrix_world = mat_rot * mat_original
+            ground.matrix_world = mat_rot @ mat_original
 
         if bpy.app.version < (2, 76, 5):  # ray_cast api changed
             hit_location, hit_normal, hit_index = \
@@ -83,17 +85,17 @@ def drop_objects(self, context, ground, obs, spherical=False, use_origin=True):
             continue
 
         to_ground_vec = hit_location - lowest_world_co
-        ob.matrix_world *= Matrix.Translation(to_ground_vec)
+        ob.matrix_world @= Matrix.Translation(to_ground_vec)
 
         if spherical is True:
-            ob.matrix_world = mat_rot * ob.matrix_world
+            ob.matrix_world = mat_rot @ ob.matrix_world
 
     ground.matrix_world = mat_original
 
     bpy.ops.object.select_all(action='DESELECT')
-    tmp_ground.select = True
+    tmp_ground.select_set(True)
     bpy.ops.object.delete('EXEC_DEFAULT')
     for ob in obs:
-        ob.select = True
-    ground.select = True
-    bpy.context.scene.objects.active = ground
+        ob.select_set(True)
+    ground.select_set(True)
+    bpy.context.view_layer.objects.active = ground

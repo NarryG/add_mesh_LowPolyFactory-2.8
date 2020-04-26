@@ -60,7 +60,7 @@ def create_water(context, prefs):
 def create_water_object(self, context, prefs):
     bpy.ops.object.select_all(action='DESELECT')
 
-    location = context.scene.cursor_location.copy()
+    location = context.scene.cursor.location.copy()
     water, noise_origin = create_water(context, prefs)
 
     if prefs.lp_Water_Keep_Modifiers:
@@ -68,20 +68,22 @@ def create_water_object(self, context, prefs):
         if noise_origin is not None:
             noise_origin.location += location
     else:
-        context.scene.update()
+        context.view_layer.update()
         me_orig = water.data
         if noise_origin is not None:
             tex = water.modifiers['displace'].texture
-        water.data = water.to_mesh(context.scene, True, 'PREVIEW')
+        dg = context.evaluated_depsgraph_get()
+        obj_eval = water.evaluated_get(dg)
+        water.data =  bpy.data.meshes.new_from_object(obj_eval)
         context.blend_data.meshes.remove(me_orig)
         water.modifiers.clear()
         water.location = location
         if noise_origin is not None:
-            context.scene.objects.unlink(noise_origin)
+            context.collection.objects.unlink(noise_origin)
             context.blend_data.objects.remove(noise_origin)
             context.blend_data.textures.remove(tex)
 
     water.data.name = water.name
-    water.select = True
+    water.select_set(True)
 
     return water

@@ -12,7 +12,7 @@ from add_mesh_LowPolyFactory.createWaterObject import *
 
 
 def get_prefs(context):
-    return context.user_preferences.addons[__package__].preferences
+    return context.preferences.addons[__package__].preferences
 
 
 class Options():
